@@ -2,14 +2,12 @@
 *.swp
 build
 generatedtest
-gradle
 .gradle
 /dist/*.*
 .classpath
 .project
 .settings
 /config/*.local
-/config/database.properties
 /docs/
 /report/
 /database/

@@ -1,0 +1,139 @@
+<project xmlns:jacoco="antlib:org.jacoco.ant">
+	
+	<!-- SETUP VARIABLES AND PATHS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+	<property name="config_dir" value="config"/> <!-- Needed to bootstrap the loading -->
+
+	<!-- Load the variable configurations. -->
+	<loadproperties srcfile="config/locations.properties" />
+	<loadproperties srcfile="${config_dir}/database.properties" />
+
+	<!-- The common classpath for building the system. -->
+	<path id="build_classpath">
+		<fileset dir="${lib_dir}" includes="*.jar" />
+	</path>
+
+	<!-- The classpath for running the system. -->
+	<path id="run_classpath">
+		<pathelement path="${build_dir}"/>
+		<fileset dir="${lib_dir}" includes="*.jar"/>
+	</path>
+	
+	<!-- Jacoco path -->
+	<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+		<classpath path="${lib_dir}/jacocoant.jar"/>
+	</taskdef>
+
+	<!-- BASIC TARGETS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+	<!-- CLEANING TASK - "ant clean" -->
+	<target name="clean">
+		<delete dir="${build_dir}"/>
+		<delete dir="${dist_dir}"/>
+		<delete dir="${run_dir}"/>
+		<delete dir="${databases_dir}"/>
+		<delete dir="${results_dir}"/>
+		<delete dir="docs"/>
+		<delete dir="report"/>
+	</target>
+
+	<!-- COMPILING TASK - "ant compile" -->  
+	<target name="compile">
+		<mkdir dir="${build_dir}"/>
+		<javac srcdir="${src_dir}" destdir="${build_dir}" includeantruntime="false" debug="true" debuglevel="vars,lines,source"  target="1.7" source="1.7">
+			<classpath refid="build_classpath"/>
+			<exclude name="deprecated/**"/>
+			<exclude name="org/schemaanalyst/sqlparser/**"/>
+			<!-- <exclude name="paper/**"/> -->
+		</javac>
+	</target>
+
+	<!-- COMPILING TASK WITH PARSER - "ant compile" -->  
+	<target name="compile-with-parser">
+		<mkdir dir="${build_dir}"/>
+		<javac srcdir="${src_dir}" destdir="${build_dir}" includeantruntime="false" debug="true" debuglevel="vars,lines,source"  target="1.7" source="1.7">
+			<classpath refid="build_classpath"/>
+			<exclude name="deprecated/**"/>
+			<!-- <exclude name="paper/**"/> -->
+		</javac>
+	</target>
+
+	<!-- TESTING TASK - "ant test" -->
+	<target name="test" depends="compile">
+		<junit fork="false">
+			<test name="org.schemaanalyst.unittest.AllTests" />
+			<classpath refid="run_classpath" />
+			<formatter type="brief" usefile="false" />
+		</junit>
+	</target>
+
+	<!-- COVERAGE TASK - "ant coverage" -->
+	<target name="coverage" depends="compile">
+		<jacoco:coverage excludes="dbmonster.*">
+			<junit fork="true">
+				<test name="org.schemaanalyst.unittest.AllTests" />
+				<classpath refid="run_classpath" />
+				<formatter type="brief" usefile="false" />
+			</junit>
+		</jacoco:coverage>
+		<jacoco:report>
+			<executiondata>
+				<file file="jacoco.exec"/>
+			</executiondata>
+			<structure name="SchemaAnalyst">
+				<classfiles>
+					<fileset dir="build">
+						<exclude name="deprecated/**" />
+						<exclude name="dbmonster/**" />
+						<exclude name="paper/**" />
+						<exclude name="parsedcasestudy/**" />
+						<exclude name="generatedtest/**" />
+						<exclude name="org/schemaanalyst/test/**" />
+					</fileset>
+				</classfiles>
+				<sourcefiles encoding="UTF-8">
+					<fileset dir="src"/>
+				</sourcefiles>
+			</structure>
+			<html destdir="report"/>
+		</jacoco:report>
+		<delete file="jacoco.exec"/>
+	</target>
+
+	<!-- BUNDLE TASK - "ant bundle" -->
+	<target name="bundle" depends="compile">
+		<zip destfile="${dist_dir}/${dist_name}Bundle.zip" basedir="" includes="build/**, lib/**,  scripts/**, config/*" excludes="config/*.local">
+			<exclude name="${dist_dir}/${dist_name}Bundle.zip"/>
+		</zip>
+	</target>
+
+	<!-- JAVADOC TASK - "ant javadoc" -->
+	<target name="javadoc" depends="compile">
+		<javadoc packagenames="org.schemaanalyst.*"
+			defaultexcludes="yes"
+			destdir="docs/api"
+			author="true"
+			version="true"
+			use="true"
+			windowtitle="SchemaAnalyst Documentation">
+			<classpath refid="run_classpath"/>
+			<fileset dir="src" defaultexcludes="yes">
+				<include name="org/schemaanalyst/**"/>
+				<exclude name="org/schemaanalyst/test/**"/>
+			</fileset>
+		</javadoc>
+	</target>
+
+	<!-- RUNNING TARGETS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+	<!-- RUNNING TASK - "ant experiment" -->
+	<!-- <target name="experiment">
+		<junit fork="yes" maxmemory="256M">
+			<test name="experiment.AllExperiments" />
+			<jvmarg value="-Dproject=${user.dir}" />
+			<classpath refid="run_classpath" />
+			<formatter type="brief" usefile="false" />
+		</junit>
+	</target> -->
+
+</project>
